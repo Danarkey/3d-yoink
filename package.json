@@ -1,0 +1,9 @@
+{
+  "name": "3d-yoink",
+  "version": "1.0.0",
+  "description": "Grab 3D models as GLB files from Meshy and Tripo Studio",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}

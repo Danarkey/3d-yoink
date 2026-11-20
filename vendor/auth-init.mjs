@@ -1,0 +1,2 @@
+function s(e,t){return(function(e,t){let r=BigInt("14695981039346656037"),n=BigInt("1099511628211"),a=BigInt("0xFFFFFFFFFFFFFFFF");for(let e=0;e<t.length;e++)r^=BigInt(t.charCodeAt(e)),r=r*n&a;for(let t=0;t<e.length;t++)r^=BigInt(e.charCodeAt(t)),r=r*n&a;return r^=r>>BigInt(33),r=r*BigInt("0xff51afd7ed558ccd")&a,r^=r>>BigInt(33),r=r*BigInt("0xc4ceb9fe1a85ec53")&a,r^=r>>BigInt(33)})(e+":"+t,"Meshy_Crypto_Key").toString(16).padStart(16,"0")}
+export default s;

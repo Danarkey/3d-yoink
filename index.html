@@ -1,0 +1,140 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D Yoink</title>
+<style>
+*{box-sizing:border-box}
+body{background:#0c0e12;color:#edf2f7;font:17px/1.6 system-ui;margin:0;display:grid;place-items:center;min-height:100vh}
+main{width:min(620px,90vw);padding:40px 0 60px}
+h1{font-size:52px;letter-spacing:-3px;margin:0 0 6px}
+h1 span{color:#c5f955}
+h2{font-size:22px;margin:36px 0 8px;letter-spacing:-0.5px}
+p{color:#929eae;margin:6px 0 14px}
+label{display:block;margin:20px 0 8px;color:#c5f955;font-size:13px;letter-spacing:1.5px;text-transform:uppercase}
+input[type=url]{width:100%;background:#181c24;color:white;border:1px solid #2e3744;border-radius:10px;padding:15px 16px;font:inherit}
+input:focus{outline:none;border-color:#c5f955}
+button{margin-top:14px;padding:14px 28px;border:0;border-radius:10px;background:#c5f955;color:#111;font:600 16px system-ui;cursor:pointer;transition:opacity .15s}
+button:disabled{opacity:.4;cursor:wait}
+.status{min-height:40px;padding:8px 0;overflow-wrap:anywhere;color:#c5f955;font-size:15px}
+.status.err{color:#f97066}
+.sep{border:0;border-top:1px solid #1e242e;margin:36px 0}
+.muted{color:#5a6577;font-size:14px}
+.bookmarklet-wrap{margin:16px 0;display:flex;align-items:center;gap:14px}
+.bookmarklet{display:inline-block;background:#1e242e;color:#c5f955;border:1px dashed #3a4555;border-radius:8px;padding:10px 20px;font:600 15px system-ui;text-decoration:none;cursor:grab;user-select:none;transition:border-color .2s}
+.bookmarklet:hover{border-color:#c5f955}
+.how{background:#141820;border-radius:10px;padding:16px 20px;margin:12px 0}
+.how ol{margin:8px 0 0;padding-left:20px;color:#aeb8c5}
+.how li{margin:4px 0}
+.tag{font-size:12px;letter-spacing:2px;color:#5a6577}
+</style>
+
+<main>
+<div class="tag">LOCAL MODEL CONVERTER</div>
+<h1>3D <span>Yoink</span></h1>
+<p>Grab 3D models as GLB files from Meshy and Tripo Studio.</p>
+
+<!-- ─── MESHY ─────────────────────────────────────────── -->
+<hr class="sep">
+<h2>Meshy</h2>
+<p>Paste a public Meshy post link. Downloads the cover model as a GLB with embedded textures.</p>
+<form id="meshy-form">
+  <label for="meshy-url">Meshy post URL</label>
+  <input id="meshy-url" type="url" required placeholder="https://www.meshy.ai/posts/...">
+  <button type="submit">Yoink GLB</button>
+</form>
+<div id="meshy-status" class="status" role="status" aria-live="polite"></div>
+<p class="muted">Model licences still apply.</p>
+
+<!-- ─── TRIPO ─────────────────────────────────────────── -->
+<hr class="sep">
+<h2>Tripo Studio</h2>
+<p>Grab any public Tripo model as a GLB. Uses a bookmarklet because Tripo's site blocks automated fetches.</p>
+
+<div class="how">
+  <strong>Setup (once)</strong>
+  <ol>
+    <li>Drag this to your bookmarks bar: <span class="bookmarklet-wrap"><a class="bookmarklet" id="bookmarklet-link" href="#">Yoink GLB</a></span></li>
+  </ol>
+  <strong>Usage</strong>
+  <ol>
+    <li>Visit any Tripo Studio model page</li>
+    <li>Click <strong>Yoink GLB</strong> in your bookmarks bar</li>
+    <li>The model downloads as a GLB automatically</li>
+  </ol>
+</div>
+<div id="tripo-status" class="status" role="status" aria-live="polite"></div>
+<p class="muted">GLB models download directly. FBX models (rigged) are converted via Blender with textures.</p>
+</main>
+
+<!-- ─── MESHY HANDLER ─────────────────────────────────── -->
+<script>
+document.querySelector('#meshy-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button'), status = document.querySelector('#meshy-status');
+  btn.disabled = true; status.className = 'status'; status.textContent = 'Resolving model...';
+  try {
+    const r = await fetch('/convert', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: document.querySelector('#meshy-url').value})});
+    if (!r.ok) throw Error(await r.text());
+    const blob = await r.blob(), url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = r.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'model.glb';
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+    status.textContent = `Downloaded ${(blob.size/1e6).toFixed(1)} MB GLB.`;
+  } catch (err) { status.className = 'status err'; status.textContent = err.message; }
+  finally { btn.disabled = false; }
+});
+</script>
+
+<!-- ─── BOOKMARKLET GENERATOR ─────────────────────────── -->
+<script>
+// Single-line bookmarklet — Vue store primary, NUXT_DATA fallback, no regex
+var _o = location.origin;
+var _bm = "javascript:void(function(){"
+  + "var u,t='tripo-model';"
+  + "try{var a=document.querySelector('%23__nuxt').__vue_app__;"
+  + "var s=a.config.globalProperties.$pinia.state.value['3d-model-store'];"
+  + "u=s.current.communityItem.model.modelUrl;"
+  + "t=s.current.project.project_name||t}catch(e){}"
+  + "if(!u){try{var d=JSON.parse(document.querySelector('%23__NUXT_DATA__').textContent);"
+  + "for(var i=0;i<d.length;i++){if(typeof d[i]==='string'&&d[i].indexOf('tripo-data')>-1"
+  + "&&(d[i].indexOf('.fbx')>-1||d[i].indexOf('.glb')>-1)){u=d[i];break}}}catch(e){}}"
+  + "if(!u){alert('No model found. Open a Tripo Studio model page first.');return}"
+  + "window.open('" + _o + "/yoink?url='+encodeURIComponent(u)+'&title='+encodeURIComponent(t),'_blank')"
+  + "})()";
+document.querySelector('#bookmarklet-link').href = _bm;
+</script>
+
+<!-- ─── TRIPO AUTO-HANDLER (from bookmarklet redirect) ── -->
+<script type="module">
+const params = new URLSearchParams(location.search);
+const modelUrl = params.get('url');
+const modelTitle = params.get('title') || 'tripo-model';
+
+if (modelUrl) {
+  history.replaceState(null, '', '/');
+  const status = document.querySelector('#tripo-status');
+  status.className = 'status';
+  const isFbx = modelUrl.includes('.fbx');
+  status.textContent = isFbx
+    ? 'Downloading FBX + textures and converting with Blender...'
+    : 'Downloading GLB from Tripo...';
+
+  try {
+    const r = await fetch('/convert-tripo', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url: modelUrl, title: modelTitle}),
+    });
+    if (!r.ok) throw Error(await r.text());
+
+    const blob = await r.blob();
+    const safeName = modelTitle.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 60) || 'tripo-model';
+    const dl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = dl; a.download = safeName + '.glb'; a.click();
+    setTimeout(() => URL.revokeObjectURL(dl), 60000);
+    status.textContent = `Downloaded ${(blob.size/1e6).toFixed(1)} MB GLB: ${modelTitle}`;
+  } catch (err) {
+    status.className = 'status err';
+    status.textContent = err.message;
+  }
+}
+</script>
+</html>
